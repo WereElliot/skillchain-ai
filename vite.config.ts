@@ -41,6 +41,10 @@ export default defineConfig({
         find: /^@farcaster\/mini-app-solana$/,
         replacement: path.resolve(__dirname, 'src/shims/empty-module.ts'),
       },
+      {
+        find: /^react-stately\/private\/flags\/flags$/,
+        replacement: path.resolve(__dirname, 'src/shims/empty-module.ts'),
+      },
     ],
   },
   optimizeDeps: {
