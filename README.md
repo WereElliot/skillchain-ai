@@ -122,8 +122,4 @@ Add the frontend environment variables in the Vercel dashboard before production
 
 ## Demo Link
 
-Add the live deployment URL here after deployment:
-
-```text
-Demo: pending deployment
-```
+[Live Demo](https://skillchain-ai-sooty.vercel.app)
