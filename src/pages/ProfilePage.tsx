@@ -13,7 +13,7 @@ import {
   CreditCard,
   Zap,
 } from 'lucide-react';
-import { mockProfile } from '@/lib/mockData';
+import { mockProfile, mockJobs } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
 import { useAppAuth } from '@/lib/auth';
 import { appConfig } from '@/lib/config';
