@@ -3,16 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Loader2, Volume2 } from 'lucide-react';
 import VoiceWaveform from '@/components/VoiceWaveform';
 import { toast } from '@/hooks/use-toast';
-import { appConfig, demoMode } from '@/lib/config';
+import { demoMode } from '@/lib/config';
 
 interface ElevenVoiceAgentProps {
   onMessageReceived?: (message: string) => void;
-  agentId?: string;
 }
 
 const ElevenVoiceAgent = ({
   onMessageReceived,
-  agentId = appConfig.elevenLabsAgentId,
 }: ElevenVoiceAgentProps) => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -31,10 +29,10 @@ const ElevenVoiceAgent = ({
   const supportsSpeechSynthesis = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   const modeLabel = useMemo(() => {
-    if (agentId && !demoMode.voice) return 'ElevenLabs configured';
-    if (supportsSpeechRecognition) return 'Browser voice demo';
-    return 'Transcript demo';
-  }, [agentId, supportsSpeechRecognition]);
+    if (supportsSpeechRecognition) return 'Browser voice';
+    if (demoMode.voice) return 'Transcript assist';
+    return 'Voice assist';
+  }, [supportsSpeechRecognition]);
 
   const buildRecognition = () => {
     const RecognitionCtor =
@@ -114,9 +112,9 @@ const ElevenVoiceAgent = ({
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(
-      agentId && !demoMode.voice
-        ? 'Voice prompt captured. ElevenLabs credentials are configured for live integration.'
-        : 'Voice prompt captured and sent to the SkillChain agent demo.',
+      demoMode.voice
+        ? 'Voice prompt captured and sent to the SkillChain agent.'
+        : 'Voice prompt captured and sent to the SkillChain agent.',
     );
     utterance.rate = 1;
     utterance.onstart = () => setIsSpeaking(true);
@@ -159,11 +157,11 @@ const ElevenVoiceAgent = ({
       <div className="w-full border border-border bg-surface-1 p-4 text-left">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan">
               Voice Console
             </p>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Capture speech when supported, or send a polished transcript for the demo flow.
+              Capture speech when supported, or send a polished transcript to the agent.
             </p>
           </div>
           {isSpeaking ? (
@@ -190,9 +188,7 @@ const ElevenVoiceAgent = ({
             Send Transcript
           </Button>
           <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-            {agentId && !demoMode.voice
-              ? 'Live ElevenLabs keys detected. Browser-native capture stays active as a stable fallback.'
-              : 'Add `VITE_ELEVENLABS_AGENT_ID` for live ElevenLabs setup.'}
+            Browser-native voice capture with transcript fallback.
           </p>
         </div>
       </div>

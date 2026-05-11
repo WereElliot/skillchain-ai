@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, Shield, Coins, Brain, Zap } from 'lucide-react';
+import { ArrowRight, Sparkles, Shield, Coins, Brain, Zap, Wallet, CreditCard, Bot, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAppAuth } from '@/lib/auth';
+import { appConfig } from '@/lib/config';
+import { toast } from '@/hooks/use-toast';
 
 const stats = [
   { label: 'ACTIVE GIGS', value: '2,400+' },
@@ -35,9 +38,20 @@ const features = [
 
 const Hero = () => {
   const [query, setQuery] = useState('');
+  const { authenticated, login, mode } = useAppAuth();
   const agentHref = query.trim()
     ? `/agent?prompt=${encodeURIComponent(query.trim())}`
     : '/agent';
+
+  const handleLogin = async () => {
+    const result = await login();
+    if (result.ok) return;
+
+    toast({
+      title: 'Login unavailable',
+      description: result.error || 'Authentication could not be started right now.',
+    });
+  };
 
   return (
     <section className="relative min-h-screen flex flex-col justify-center overflow-hidden bg-[#050505] pt-16">
@@ -114,6 +128,102 @@ const Hero = () => {
               </Link>
             </div>
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mx-auto mb-20 grid max-w-5xl gap-4 lg:grid-cols-[1.4fr_1fr_1fr]"
+        >
+          <div className="border border-border bg-surface-1 p-6">
+            <div className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-purple">
+              <Sparkles className="h-3.5 w-3.5" />
+              Onboarding Flow
+            </div>
+            <h2 className="text-xl font-black uppercase tracking-tight text-foreground">
+              Start In Three Smooth Moves
+            </h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {[
+                { icon: Wallet, title: authenticated ? 'Wallet Ready' : 'Connect', copy: authenticated ? 'Your profile is ready to work.' : 'Sign in and unlock the hiring flow.' },
+                { icon: CreditCard, title: 'Fund', copy: 'Open Moonpay instantly for top-up and escrow prep.' },
+                { icon: Bot, title: 'Ask', copy: 'Describe a role or skill and let Agent 01 shortlist the best matches.' },
+              ].map((step, index) => (
+                <div key={step.title} className="border border-border bg-surface-2 p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <step.icon className="h-4 w-4 text-cyan" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                      0{index + 1}
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-black uppercase tracking-widest text-foreground">
+                    {step.title}
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                    {step.copy}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void handleLogin()}
+            className="flex flex-col items-start justify-between border border-border bg-surface-1 p-6 text-left transition-colors hover:border-purple/40"
+          >
+            <div>
+              <div className="mb-3 flex h-10 w-10 items-center justify-center border border-border bg-surface-2">
+                {mode === 'supabase' ? (
+                  <Github className="h-4 w-4 text-purple" />
+                ) : (
+                  <Wallet className="h-4 w-4 text-purple" />
+                )}
+              </div>
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                Welcome
+              </div>
+              <h3 className="mt-2 text-lg font-black uppercase tracking-tight text-foreground">
+                {authenticated ? 'Account Connected' : mode === 'supabase' ? 'Login With GitHub' : 'Connect Wallet'}
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {authenticated
+                  ? 'Your onboarding is complete. Jump straight into matching, proposals, and escrow flows.'
+                  : 'Enter the marketplace with one clean step and unlock a guided hiring journey.'}
+              </p>
+            </div>
+            <span className="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-purple">
+              {authenticated ? 'Ready to use' : 'Start onboarding'}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </span>
+          </button>
+
+          <a
+            href={appConfig.moonpayUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-start justify-between border border-cyan/20 bg-cyan/10 p-6 text-left transition-colors hover:bg-cyan/15"
+          >
+            <div>
+              <div className="mb-3 flex h-10 w-10 items-center justify-center border border-cyan/20 bg-black/20">
+                <CreditCard className="h-4 w-4 text-cyan" />
+              </div>
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan">
+                Easy Access
+              </div>
+              <h3 className="mt-2 text-lg font-black uppercase tracking-tight text-foreground">
+                Open Moonpay
+              </h3>
+              <p className="mt-2 text-sm text-cyan/80">
+                Top up quickly before proposals, escrow funding, or wallet-based job acceptance.
+              </p>
+            </div>
+            <span className="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-cyan">
+              Launch on-ramp
+              <ArrowRight className="h-3.5 w-3.5" />
+            </span>
+          </a>
         </motion.div>
 
         <motion.div

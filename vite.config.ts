@@ -55,7 +55,6 @@ export default defineConfig({
       '@radix-ui/react-toast',
       'class-variance-authority',
       'react-router-dom',
-      'react-dom/client',
     ],
   },
 }) 

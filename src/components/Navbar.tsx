@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Zap, Briefcase, User, PlusCircle, Bot, LogOut, Wallet } from 'lucide-react';
+import { Menu, X, Zap, Briefcase, User, PlusCircle, Bot, LogOut, Wallet, Github } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppAuth } from '@/lib/auth';
 import { getPrivyWalletAddress } from '@/lib/privy';
+import { toast } from '@/hooks/use-toast';
 
 const navLinks = [
   { to: '/', label: 'Home', icon: Zap },
@@ -22,6 +23,29 @@ const Navbar = () => {
   const shortAddress = walletAddress
     ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`
     : '';
+  const userLabel =
+    user?.github?.username ||
+    user?.email?.address ||
+    shortAddress;
+
+  const handleLogin = async () => {
+    const result = await login();
+
+    if (result.ok) {
+      return;
+    }
+
+    const providerDisabled =
+      result.error?.toLowerCase().includes('unsupported provider') ||
+      result.error?.toLowerCase().includes('provider is not enabled');
+
+    toast({
+      title: providerDisabled ? 'GitHub login is not enabled yet' : 'Login unavailable',
+      description: providerDisabled
+        ? 'Enable the GitHub provider in Supabase Auth, then add the GitHub OAuth client ID and secret.'
+        : result.error || 'Authentication could not be started right now.',
+    });
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
@@ -69,11 +93,11 @@ const Navbar = () => {
               <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-surface-1 border border-border rounded-sm">
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-dot" />
                 <span className="text-[10px] font-mono font-medium text-muted-foreground">
-                  {shortAddress || (user?.email?.address)}
+                  {userLabel}
                 </span>
               </div>
               <div className="hidden lg:flex items-center rounded-sm border border-cyan/20 bg-cyan/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-cyan">
-                {mode === 'privy' ? 'Privy' : 'Demo'}
+                {mode === 'privy' ? 'Privy' : mode === 'supabase' ? 'GitHub' : 'Demo'}
               </div>
               <Button 
                 variant="outline" 
@@ -87,11 +111,11 @@ const Navbar = () => {
             </div>
           ) : (
             <Button 
-              onClick={login}
+              onClick={() => void handleLogin()}
               className="bg-gradient-primary hover:opacity-90 text-primary-foreground rounded-sm h-9 px-5 text-xs font-bold gap-2 shadow-glow-purple"
             >
-              <Wallet className="h-3.5 w-3.5" />
-              {mode === 'privy' ? 'Connect' : 'Demo Login'}
+              {mode === 'supabase' ? <Github className="h-3.5 w-3.5" /> : <Wallet className="h-3.5 w-3.5" />}
+              {mode === 'privy' ? 'Connect' : mode === 'supabase' ? 'Login with GitHub' : 'Demo Login'}
             </Button>
           )}
           <button
@@ -133,11 +157,11 @@ const Navbar = () => {
               })}
               {!authenticated && (
                 <button
-                  onClick={login}
+                  onClick={() => void handleLogin()}
                   className="w-full flex items-center gap-3 px-3 py-3 text-sm font-bold text-purple bg-purple/10 rounded-sm mt-4"
                 >
-                  <Wallet className="h-4 w-4" />
-                  {mode === 'privy' ? 'Connect Wallet' : 'Enter Demo Mode'}
+                  {mode === 'supabase' ? <Github className="h-4 w-4" /> : <Wallet className="h-4 w-4" />}
+                  {mode === 'privy' ? 'Connect Wallet' : mode === 'supabase' ? 'Continue with GitHub' : 'Enter Demo Mode'}
                 </button>
               )}
             </div>

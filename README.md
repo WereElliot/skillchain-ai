@@ -67,6 +67,14 @@ VITE_SOLANA_RPC_URL=https://api.devnet.solana.com
 VITE_SOLANA_NETWORK_LABEL=Devnet
 ```
 
+If Supabase generated a Next.js example for you with `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, use the Vite equivalents above:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL -> VITE_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY -> VITE_SUPABASE_ANON_KEY
+```
+
 Supabase Edge Function secrets:
 
 ```bash

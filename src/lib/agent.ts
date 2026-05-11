@@ -1,6 +1,7 @@
 import { appConfig } from '@/lib/config';
 import type { Job, Profile } from '@/lib/mockData';
 import { streamDemoAgentResponse } from '@/lib/demoAgent';
+import { getSupabaseAuthHeaders, getSupabaseFunctionUrl } from '@/lib/supabase';
 
 export interface AgentChatMessage {
   role: 'user' | 'assistant';
@@ -91,13 +92,9 @@ export async function streamAgentResponse({
   }
 
   try {
-    const response = await fetch(`${appConfig.supabaseUrl}/functions/v1/chat-grok`, {
+    const response = await fetch(getSupabaseFunctionUrl('chat-grok'), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: appConfig.supabaseAnonKey,
-        Authorization: `Bearer ${appConfig.supabaseAnonKey}`,
-      },
+      headers: getSupabaseAuthHeaders(),
       body: JSON.stringify({ messages, context }),
       signal,
     });
@@ -114,6 +111,7 @@ export async function streamAgentResponse({
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let liveStreamFailed = false;
 
     while (true) {
       const { value, done } = await reader.read();
@@ -136,16 +134,23 @@ export async function streamAgentResponse({
           try {
             const payload = JSON.parse(parsed.data);
             const eventName = parsed.event as keyof AgentStreamEventMap;
+            if (eventName === 'error') {
+              const errorPayload = payload as AgentStreamEventMap['error'];
+              throw new Error(errorPayload.message || 'Live agent stream failed.');
+            }
             onEvent(eventName, payload);
           } catch (error) {
-            onEvent('error', {
-              message: error instanceof Error ? error.message : 'Failed to parse agent stream.',
-            });
+            liveStreamFailed = true;
+            throw error;
           }
         }
 
         separatorIndex = buffer.indexOf('\n\n');
       }
+    }
+
+    if (liveStreamFailed) {
+      throw new Error('Live agent stream failed.');
     }
   } catch (error) {
     if (signal?.aborted) {

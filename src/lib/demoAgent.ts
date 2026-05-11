@@ -38,6 +38,7 @@ function scoreJob(job: AgentContext['jobs'][number], query: string) {
 
   if (job.urgent) score += 1.5;
   if (job.remote) score += 1;
+  if (job.clientRating && job.clientRating >= 4.8) score += 0.5;
   return score;
 }
 
@@ -50,7 +51,11 @@ function getBestMatches(context: AgentContext, query: string) {
     .map((job) => ({ job, score: scoreJob(job, query) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
-    .map(({ job }) => job);
+    .map(({ job, score }) => ({
+      ...job,
+      matchScore: Number(Math.min(99, Math.max(74, score * 6)).toFixed(0)),
+      rationale: `Strong overlap with ${job.skills.slice(0, 3).join(', ')}, ${job.timeline ?? 'a realistic timeline'}, and ${job.paymentTerms?.toLowerCase() ?? 'clear escrow terms'}.`,
+    }));
 }
 
 function findReferencedJob(context: AgentContext, prompt: string) {
@@ -70,14 +75,17 @@ function buildProposal(context: AgentContext, prompt: string) {
   const proposal = [
     `Hello ${job.company} team,`,
     '',
-    `I’m excited to apply for the ${job.title} role. ${context.profile.bio}`,
+    `I'm excited to apply for the ${job.title} role. ${context.profile.bio}`,
     '',
     'Why I fit this brief:',
     `- ${context.profile.level} builder with ${context.profile.completedJobs}+ completed gigs and a ${context.profile.reputation}/100 on-chain reputation score.`,
     `- Hands-on delivery experience across ${job.skills.slice(0, 4).join(', ')} with polished, production-minded execution.`,
-    '- Clear milestone planning, fast communication, and demo-quality shipping discipline from kickoff through escrow closeout.',
+    `- A realistic delivery plan for ${job.timeline ?? 'the requested timeline'} with transparent milestone communication and clean handoff discipline.`,
     '',
-    'I would approach this engagement with a practical build plan, visible progress checkpoints, and a strong final handoff.',
+    'Execution approach:',
+    `- Kickoff with scope confirmation, success metrics, and milestone mapping aligned to ${job.paymentTerms ?? 'escrow-based payments'}.`,
+    `- Deliver the core build across ${job.deliverables?.slice(0, 3).join(', ') ?? 'the required deliverables'} with visible progress updates.`,
+    '- Close with QA, walkthrough notes, and handoff assets so the team can ship confidently.',
     '',
     'Best,',
     context.profile.name,
@@ -166,7 +174,7 @@ function createDemoResponse(
     const { job, proposal } = buildProposal(context, prompt);
     return {
       text: job
-        ? `I’ve drafted a high-conviction proposal for ${job.title} and mapped the fastest path into escrow. Review the draft, tighten the technical emphasis if needed, then open Pay.sh to package the engagement terms.`
+        ? `I've drafted a high-conviction proposal for ${job.title} and mapped the fastest path into escrow. Review the draft, tighten the technical emphasis if needed, then submit the application to move this opportunity into shortlist status.`
         : 'I prepared a proposal flow and next-step escrow plan based on the current marketplace context.',
       toolSummary: job ? `Generated proposal for ${job.title}.` : 'Generated proposal draft.',
       payload: {
@@ -189,8 +197,8 @@ function createDemoResponse(
     const job = findReferencedJob(context, prompt);
     return {
       text: context.wallet.authenticated
-        ? `Your wallet flow is ready. I’ve paired the current balance context with a clean top-up and escrow path so you can move from funding to acceptance without friction.`
-        : `I’ve prepared the funding and escrow flow. Connect a wallet or stay in demo mode, then use Moonpay for top-up and Pay.sh for milestone escrow setup.`,
+        ? `Your wallet flow is ready. I've paired the current balance context with a clean top-up and escrow path so you can move from funding to acceptance without friction.`
+        : `I've prepared the funding and escrow flow. Connect a wallet or stay in demo mode, then use Moonpay for top-up and Pay.sh for milestone escrow setup.`,
       toolSummary: 'Prepared wallet-aware payment flow.',
       payload: {
         jobs: job ? [job] : undefined,
@@ -204,7 +212,7 @@ function createDemoResponse(
   const [topJob] = jobs;
   return {
     text: topJob
-      ? `I found the strongest matches for your brief, with ${topJob.title} leading the pack. The shortlist below is optimized for budget, urgency, and overlap with your profile, and I’ve included the fastest route to generate a proposal from here.`
+      ? `I found the strongest matches for your brief, with ${topJob.title} leading the pack. The shortlist below is optimized for budget, urgency, overlap with your profile, and delivery realism. From here you can open a tailored proposal and submit directly into the application flow.`
       : 'I scanned the marketplace context and prepared the best available matches.',
     toolSummary: `Matched ${jobs.length} job(s) against the current brief.`,
     payload: {

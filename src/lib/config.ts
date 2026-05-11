@@ -1,5 +1,9 @@
 const env = import.meta.env;
 
+function cleanEnvValue(value?: string) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 function hasRealConfigValue(value?: string) {
   if (!value) return false;
 
@@ -16,14 +20,14 @@ function hasRealConfigValue(value?: string) {
 }
 
 export const appConfig = {
-  privyAppId: env.VITE_PRIVY_APP_ID || 'demo-privy-app-id',
-  supabaseUrl: env.VITE_SUPABASE_URL || '',
-  supabaseAnonKey: env.VITE_SUPABASE_ANON_KEY || '',
-  elevenLabsAgentId: env.VITE_ELEVENLABS_AGENT_ID || '',
-  moonpayUrl: env.VITE_MOONPAY_URL || 'https://buy.moonpay.com',
-  payShUrl: env.VITE_PAYSH_URL || 'https://pay.sh',
-  solanaRpcUrl: env.VITE_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-  networkLabel: env.VITE_SOLANA_NETWORK_LABEL || 'Devnet',
+  privyAppId: cleanEnvValue(env.VITE_PRIVY_APP_ID) || 'demo-privy-app-id',
+  supabaseUrl: cleanEnvValue(env.VITE_SUPABASE_URL),
+  supabaseAnonKey: cleanEnvValue(env.VITE_SUPABASE_ANON_KEY),
+  elevenLabsAgentId: cleanEnvValue(env.VITE_ELEVENLABS_AGENT_ID),
+  moonpayUrl: cleanEnvValue(env.VITE_MOONPAY_URL) || 'https://buy.moonpay.com',
+  payShUrl: cleanEnvValue(env.VITE_PAYSH_URL) || 'https://pay.sh',
+  solanaRpcUrl: cleanEnvValue(env.VITE_SOLANA_RPC_URL) || 'https://api.devnet.solana.com',
+  networkLabel: cleanEnvValue(env.VITE_SOLANA_NETWORK_LABEL) || 'Devnet',
 };
 
 export const integrationStatus = {

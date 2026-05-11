@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -19,6 +19,7 @@ import { useAppAuth } from '@/lib/auth';
 import { appConfig } from '@/lib/config';
 import { getPrivyWalletAddress } from '@/lib/privy';
 import PaymentFlowDialog from '@/components/PaymentFlowDialog';
+import { getActiveApplications, getHiredApplications } from '@/lib/applications';
 
 const reputationHistory = [
   { job: 'DEX Frontend Build', score: '+5', date: 'Apr 2026', status: 'completed' },
@@ -31,15 +32,29 @@ const ProfilePage = () => {
   const { authenticated, user, mode } = useAppAuth();
   const [copied, setCopied] = useState(false);
   const [paymentDialog, setPaymentDialog] = useState<null | 'moonpay' | 'paysh'>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'reputation' | 'history'>(
+  const [activeTab, setActiveTab] = useState<'overview' | 'applications' | 'reputation' | 'history'>(
     'overview'
   );
+  const [applicationVersion, setApplicationVersion] = useState(0);
 
   const walletAddress = getPrivyWalletAddress(user as never);
   const address = walletAddress || mockProfile.address;
   const shortAddress = walletAddress
     ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`
     : mockProfile.address;
+  const profileName = authenticated
+    ? user?.github?.username || user?.email?.address?.split('@')[0] || 'User'
+    : mockProfile.name;
+  const authLabel = mode === 'privy' ? 'Privy' : mode === 'supabase' ? 'GitHub' : 'Demo Auth';
+  useEffect(() => {
+    const handleFocus = () => setApplicationVersion((value) => value + 1);
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
+  void applicationVersion;
+  const activeApplications = getActiveApplications(mockJobs);
+  const hiredApplications = getHiredApplications(mockJobs);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(address);
@@ -73,13 +88,13 @@ const ProfilePage = () => {
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-2xl font-black uppercase tracking-tighter text-foreground">
-                  {authenticated ? (user?.email?.address?.split('@')[0] || 'User') : mockProfile.name}
+                  {profileName}
                 </h1>
                 <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-purple/10 border border-purple/20 text-purple">
                   {mockProfile.level}
                 </span>
                 <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-cyan/10 border border-cyan/20 text-cyan">
-                  {mode === 'privy' ? 'Privy' : 'Demo Auth'}
+                  {authLabel}
                 </span>
               </div>
 
@@ -115,12 +130,12 @@ const ProfilePage = () => {
                     value: `${mockProfile.reputation}/100`,
                     color: 'text-purple',
                   },
-                  {
-                    icon: Briefcase,
-                    label: 'GIGS',
-                    value: mockProfile.completedJobs.toString(),
-                    color: 'text-cyan',
-                  },
+                {
+                  icon: Briefcase,
+                  label: 'GIGS',
+                    value: `${mockProfile.completedJobs + hiredApplications.length}`,
+                  color: 'text-cyan',
+                },
                   {
                     icon: Coins,
                     label: 'USDC',
@@ -188,7 +203,7 @@ const ProfilePage = () => {
           transition={{ delay: 0.2 }}
         >
           <div className="flex items-center gap-1 mb-8 border-b border-border">
-            {(['overview', 'reputation', 'history'] as const).map((tab) => (
+            {(['overview', 'applications', 'reputation', 'history'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -222,16 +237,16 @@ const ProfilePage = () => {
                 },
                 {
                   icon: Award,
-                  title: 'Success Rate',
-                  value: '98%',
-                  subtitle: '46 Gigs Completed',
+                  title: 'Won In Flow',
+                  value: `${hiredApplications.length}`,
+                  subtitle: 'Agent-assisted hires',
                   color: 'text-cyan',
                 },
                 {
                   icon: TrendingUp,
-                  title: 'Response Time',
-                  value: '< 2H',
-                  subtitle: 'High Activity Tier',
+                  title: 'Active Pipeline',
+                  value: `${activeApplications.length}`,
+                  subtitle: 'Open applications',
                   color: 'text-emerald-400',
                 },
               ].map((card) => (
@@ -249,6 +264,85 @@ const ProfilePage = () => {
                   <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{card.subtitle}</div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {activeTab === 'applications' && (
+            <div className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="border border-border bg-surface-1 p-6">
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                    Open Applications
+                  </div>
+                  <div className="mt-2 text-3xl font-black uppercase tracking-tighter text-foreground">
+                    {activeApplications.length}
+                  </div>
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Proposals that are currently under review, shortlisted, or in final interviews.
+                  </p>
+                </div>
+                <div className="border border-emerald-500/20 bg-emerald-500/5 p-6">
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-300">
+                    Hired Through Agent
+                  </div>
+                  <div className="mt-2 text-3xl font-black uppercase tracking-tighter text-foreground">
+                    {hiredApplications.length}
+                  </div>
+                  <p className="mt-2 text-[11px] text-emerald-200/80">
+                    Accepted roles that have progressed into kickoff and escrow-ready status.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[...activeApplications, ...hiredApplications].map(({ job, application }, i) => (
+                  <motion.div
+                    key={job.id}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="border border-border bg-surface-1 p-5"
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="text-sm font-black uppercase tracking-tight text-foreground">
+                          {job.title}
+                        </div>
+                        <div className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          {job.company} / {job.budget} / {application.updatedAt}
+                        </div>
+                        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+                          {job.description}
+                        </p>
+                      </div>
+                      <span className="inline-flex h-fit items-center border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.18em] text-emerald-300">
+                        {application.status}
+                      </span>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      {application.timeline.slice(0, 3).map((entry) => (
+                        <div
+                          key={entry}
+                          className="border-l border-purple/30 pl-3 text-[11px] leading-relaxed text-muted-foreground"
+                        >
+                          {entry}
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
+
+                {activeApplications.length === 0 && hiredApplications.length === 0 ? (
+                  <div className="border border-dashed border-border bg-surface-1 p-8 text-center">
+                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                      No Applications Yet
+                    </div>
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Open the agent, generate a proposal, and submit an application to populate this pipeline.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
             </div>
           )}
 
